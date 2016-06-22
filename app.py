@@ -1,15 +1,13 @@
 #-*- encoding: utf-8 -*-
 
 import flask
-import flask_sqlalchemy
-from models import VendingMachine, Buyer, Good
+from models import VendingMachine, Buyer, Good, db
 from flask_admin.contrib.sqla import ModelView
 from flask_admin import Admin
 
 app = flask.Flask(__name__, static_url_path='/home/nixon/vms/static')
 app.config['DEBUG'] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
-db = flask_sqlalchemy.SQLAlchemy(app)
 admin = Admin(app)
 admin.add_view(ModelView(VendingMachine, db.session))
 admin.add_view(ModelView(Buyer, db.session))
@@ -63,6 +61,22 @@ def get_vm(vm_id):
                           'data': ret})
 
 
+@app.route('/vms/add', methods=['POST'])
+def add_vm():
+    vm = VendingMachine(coins_1 = 100, coins_2 = 100, coins_5 = 100, coins_10 = 100, buff = 0)
+    tea = Good(name = u'Чай', price = 13, amount = 10, vm = vm)
+    coffee = Good(name = u'Кофе', price = 18, amount = 20, vm = vm)
+    latte = Good(name = u'Кофе с молоком', price = 21, amount = 20, vm = vm)
+    juice = Good(name = u'Сок', price = 35, amount = 15, vm = vm)
+    db.session.add_all([vm, tea, coffee, latte, juice])
+    db.session.commit()
+    return flask.jsonify({'success': True,
+                          'message': '',
+                          'action': 'add_vm',
+                          'data': None})
+
+
+
 @app.route('/buyer/<int:buyer_id>', methods=['GET'])
 def get_buyer_info(buyer_id):
     buyer = Buyer.query.get(buyer_id)
@@ -103,13 +117,13 @@ def buy(vm_id, good_id):
         if good and vm.buff >= good.price and good.amount > 0:
             good.amount -= 1
             vm.buff -= good.price
-            db.session.commit()
             success = True
             message = u'Спасибо!'
         elif not good.amount:
             message = u'Извините, мы продали уже весь %s' % good.name
     else:
         message = u'Извините, у нас нет подобного в ассортименте'
+    db.session.commit()
     return flask.jsonify({'success': success,
                           'message': message,
                           'action': 'buy',

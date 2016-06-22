@@ -1,7 +1,7 @@
 class BaseManager
 
     constructor: ->
-        @get_vm 1
+        @get_vm 6
         @get_buyer 1
 
     ask: (method, url) ->
@@ -67,9 +67,9 @@ class VendingMachine
                 {% endfor %}
             </div>
             <div class="buffer thumbnail col-md-6" data-amount="{{ vm.buffer }}">
-                {{ vm.buffer }}
+                Внесенная сумма: {{ vm.buffer }}
             </div>
-            <button class="return btn-danger"><span class="glyphicon glyphicon-repeat"></span></button>
+            <button class="return btn-danger"><span class="glyphicon glyphicon-repeat"></span>Сдача</button>
             '
         @preview = document.getElementById('vm')
         content = swig.render template, locals: {vm: @}
