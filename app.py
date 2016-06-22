@@ -1,13 +1,11 @@
 #-*- encoding: utf-8 -*-
 
 import flask
-from models import VendingMachine, Buyer, Good, db
+import flask_sqlalchemy
+from models import VendingMachine, Buyer, Good, db, app
 from flask_admin.contrib.sqla import ModelView
 from flask_admin import Admin
 
-app = flask.Flask(__name__, static_url_path='/home/nixon/vms/static')
-app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
 admin = Admin(app)
 admin.add_view(ModelView(VendingMachine, db.session))
 admin.add_view(ModelView(Buyer, db.session))
@@ -43,7 +41,7 @@ def get_vms():
 
 @app.route('/vms/<int:vm_id>', methods=['GET'])
 def get_vm(vm_id):
-    vm = VendingMachine.query.get(vm_id)
+    vm = VendingMachine.query.options(flask_sqlalchemy.orm.joinedload('goods')).get(vm_id)
     coins = [{'nominal': key, 'amount': value} for key, value in vm.get_coins().iteritems()]
     goods = []
     for good in vm.goods:
@@ -111,9 +109,10 @@ def add_coin(vm_id, buyer_id, coin):
 def buy(vm_id, good_id):
     success = False
     message = u'Недостаточно средств'
-    good = Good.query.filter(db.and_(Good.id == good_id, Good.vm_id == vm_id)).first()
+    good = Good.query.filter(db.and_(Good.id == good_id, Good.vm_id == vm_id)).options(flask_sqlalchemy.orm.joinedload('vm').load_only('buff')).first()
+    print 'Hello'
     if good:
-        vm = VendingMachine.query.get(vm_id)
+        vm = good.vm
         if good and vm.buff >= good.price and good.amount > 0:
             good.amount -= 1
             vm.buff -= good.price

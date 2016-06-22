@@ -5,6 +5,7 @@ from change import change_money
 app = flask.Flask(__name__, static_url_path='/home/nixon/vms/static')
 app.config['DEBUG'] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
+app.config['SQLALCHEMY_ECHO'] = True
 db = flask_sqlalchemy.SQLAlchemy(app)
 
 
@@ -32,8 +33,9 @@ class Buyer(db.Model):
         field = 'coins_%d' % coin
         if hasattr(self, field):
             value = getattr(self, field)
-            setattr(self, field, value - 1)
-            return True
+            if value > 0:
+                setattr(self, field, value - 1)
+                return True
         return False
 
     def add_coins(self, coins):
