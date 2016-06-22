@@ -1,3 +1,5 @@
+#-*- encoding: utf-8 -*-
+
 import flask
 import flask_sqlalchemy
 from models import VendingMachine, Buyer, Good
@@ -105,7 +107,7 @@ def buy(vm_id, good_id):
             success = True
             message = u'Спасибо!'
     return flask.jsonify({'success': success,
-                          'message': message.encode('utf-8'),
+                          'message': message,
                           'action': 'buy',
                           'data': None})
 

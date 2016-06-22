@@ -58,7 +58,7 @@ class VendingMachine
                 {{ vm.buffer }}
             </div>
             <button class="return btn-danger"><span class="glyphicon glyphicon-repeat"></span></button>
-            <div id="message"></div>
+            <div id="message" class="col-md-12"></div>
             '
         @preview = document.getElementById('vm')
         content = swig.render template, locals: {vm: @}
