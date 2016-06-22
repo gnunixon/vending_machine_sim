@@ -106,6 +106,10 @@ def buy(vm_id, good_id):
             db.session.commit()
             success = True
             message = u'Спасибо!'
+        elif not good.amount:
+            message = u'Извините, мы продали уже весь %s' % good.name
+    else:
+        message = u'Извините, у нас нет подобного в ассортименте'
     return flask.jsonify({'success': success,
                           'message': message,
                           'action': 'buy',
@@ -138,4 +142,13 @@ db.create_all()
 
 # start the flask loop
 app.secret_key = 'super secret key'
-app.run(host='0.0.0.0')
+#app.run(host='0.0.0.0')
+if __name__ == "__main__":
+
+    from tornado.wsgi import WSGIContainer
+    from tornado.httpserver import HTTPServer
+    from tornado.ioloop import IOLoop
+
+    http_server = HTTPServer(WSGIContainer(app))
+    http_server.listen(5000)
+    IOLoop.instance().start()
