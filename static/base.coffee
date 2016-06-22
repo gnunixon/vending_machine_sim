@@ -1,7 +1,7 @@
 class BaseManager
 
     constructor: ->
-        @get_vm 2
+        @get_vm 1
         @get_buyer 1
 
     ask: (method, url) ->
@@ -47,7 +47,7 @@ class VendingMachine
             </div>
             <div class="goods col-md-12 thumbnail">
                 {% for good in vm.goods %}
-                    <button class="good col-md-2" data-value="{{ good.name }}" data-price="{{ good.price }}" data-amount="{{ good.amount }}">
+                    <button class="good col-md-2" data-value="{{ good.name }}" data-price="{{ good.price }}" data-amount="{{ good.amount }}" data-id="{{ good.id }}">
                         <h4>{{ good.name }}</h4>
                         <h3>{{ good.amount }}</h3>
                         <h4><span class="glyphicon glyphicon-rub"></span> {{ good.price }}</h4>
@@ -64,11 +64,13 @@ class VendingMachine
         content = swig.render template, locals: {vm: @}
         @preview.innerHTML = content
         vm = @
-        @preview.querySelector('.good').addEventListener('click', ->
-            success = base.ask 'PUT', '/vms/' + vm.id + '/pay/' + this.dataset.value
-            if success
-                base.get_vm vm.id
-        )
+        goods = @preview.querySelectorAll('.good')
+        for good in goods
+            good.addEventListener('click', ->
+                success = base.ask 'PUT', '/vms/' + vm.id + '/pay/' + this.dataset.id
+                if success
+                    base.get_vm vm.id
+            )
         @preview.querySelector('.return').addEventListener('click', ->
             success = base.ask 'PUT', '/vms/' + vm.id + '/buyer/' + base.buyer.id + '/return'
             if success

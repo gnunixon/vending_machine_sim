@@ -1,11 +1,17 @@
 import flask
 import flask_sqlalchemy
 from models import VendingMachine, Buyer, Good
+from flask_admin.contrib.sqla import ModelView
+from flask_admin import Admin
 
 app = flask.Flask(__name__, static_url_path='/home/nixon/vms/static')
 app.config['DEBUG'] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
 db = flask_sqlalchemy.SQLAlchemy(app)
+admin = Admin(app)
+admin.add_view(ModelView(VendingMachine, db.session))
+admin.add_view(ModelView(Buyer, db.session))
+admin.add_view(ModelView(Good, db.session))
 
 
 @app.route('/')
@@ -38,7 +44,8 @@ def get_vm(vm_id):
     for good in vm.goods:
         goods.append({'name': good.name,
                       'price': good.price,
-                      'amount': good.amount})
+                      'amount': good.amount,
+                      'id': good.id})
     ret = {'id': vm.id, 'coins': coins, 'buffer': vm.buff,
            'goods': goods}
     return flask.jsonify({'vm': ret})
@@ -98,4 +105,5 @@ db.create_all()
 # manager.create_api(VendingMachine, methods=['GET', 'POST', 'DELETE'])
 
 # start the flask loop
+app.secret_key = 'super secret key'
 app.run(host='0.0.0.0')

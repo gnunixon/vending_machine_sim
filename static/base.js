@@ -3,7 +3,7 @@ var BaseManager, Buyer, VendingMachine, base;
 
 BaseManager = (function() {
   function BaseManager() {
-    this.get_vm(2);
+    this.get_vm(1);
     this.get_buyer(1);
   }
 
@@ -48,8 +48,8 @@ VendingMachine = (function() {
   }
 
   VendingMachine.prototype.render = function() {
-    var content, template, vm;
-    template = '<h1>Vending Machine {{ vm.id }}</h1> <div class="coins col-md-12"> {% for coin in vm.coins %} <button class="btn-warning coin" data-value="{{ coin.nominal }}" data-amount="{{ coin.amount }}"> <span class="glyphicon glyphicon-rub"></span> {{ coin.nominal }} X {{ coin.amount }} </button> {% endfor %} </div> <div class="goods col-md-12 thumbnail"> {% for good in vm.goods %} <button class="good col-md-2" data-value="{{ good.name }}" data-price="{{ good.price }}" data-amount="{{ good.amount }}"> <h4>{{ good.name }}</h4> <h3>{{ good.amount }}</h3> <h4><span class="glyphicon glyphicon-rub"></span> {{ good.price }}</h4> </button> {% endfor %} </div> <div class="buffer thumbnail col-md-6" data-amount="{{ vm.buffer }}"> {{ vm.buffer }} </div> <button class="return btn-danger"><span class="glyphicon glyphicon-repeat"></span></button> <div id="message"></div>';
+    var content, good, goods, i, len, template, vm;
+    template = '<h1>Vending Machine {{ vm.id }}</h1> <div class="coins col-md-12"> {% for coin in vm.coins %} <button class="btn-warning coin" data-value="{{ coin.nominal }}" data-amount="{{ coin.amount }}"> <span class="glyphicon glyphicon-rub"></span> {{ coin.nominal }} X {{ coin.amount }} </button> {% endfor %} </div> <div class="goods col-md-12 thumbnail"> {% for good in vm.goods %} <button class="good col-md-2" data-value="{{ good.name }}" data-price="{{ good.price }}" data-amount="{{ good.amount }}" data-id="{{ good.id }}"> <h4>{{ good.name }}</h4> <h3>{{ good.amount }}</h3> <h4><span class="glyphicon glyphicon-rub"></span> {{ good.price }}</h4> </button> {% endfor %} </div> <div class="buffer thumbnail col-md-6" data-amount="{{ vm.buffer }}"> {{ vm.buffer }} </div> <button class="return btn-danger"><span class="glyphicon glyphicon-repeat"></span></button> <div id="message"></div>';
     this.preview = document.getElementById('vm');
     content = swig.render(template, {
       locals: {
@@ -58,13 +58,17 @@ VendingMachine = (function() {
     });
     this.preview.innerHTML = content;
     vm = this;
-    this.preview.querySelector('.good').addEventListener('click', function() {
-      var success;
-      success = base.ask('PUT', '/vms/' + vm.id + '/pay/' + this.dataset.value);
-      if (success) {
-        return base.get_vm(vm.id);
-      }
-    });
+    goods = this.preview.querySelectorAll('.good');
+    for (i = 0, len = goods.length; i < len; i++) {
+      good = goods[i];
+      good.addEventListener('click', function() {
+        var success;
+        success = base.ask('PUT', '/vms/' + vm.id + '/pay/' + this.dataset.id);
+        if (success) {
+          return base.get_vm(vm.id);
+        }
+      });
+    }
     return this.preview.querySelector('.return').addEventListener('click', function() {
       var success;
       success = base.ask('PUT', '/vms/' + vm.id + '/buyer/' + base.buyer.id + '/return');
