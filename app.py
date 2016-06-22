@@ -29,7 +29,13 @@ def swig():
 
 @app.route('/vms', methods=['GET'])
 def get_vms():
-    vms = VendingMachine.query.all()
+    """
+    Get the list of all available Vending Machines
+
+    :returns: the ids of all VMs
+    :rtype: json
+    """
+    vms = VendingMachine.query.options(flask_sqlalchemy.orm.load_only('id')).all()
     ret = [{'id': vm.id} for vm in vms]
     success = True
     message = ''
@@ -41,6 +47,13 @@ def get_vms():
 
 @app.route('/vms/<int:vm_id>', methods=['GET'])
 def get_vm(vm_id):
+    """
+    Get the info about a specific Vending Machine (available coins, available
+    stuff for selling, the state of buffer
+
+    :param int vm_id: the id of VM
+    :rtype: json
+    """
     vm = VendingMachine.query.options(flask_sqlalchemy.orm.joinedload('goods')).get(vm_id)
     coins = [{'nominal': key, 'amount': value} for key, value in vm.get_coins().iteritems()]
     goods = []
@@ -61,6 +74,11 @@ def get_vm(vm_id):
 
 @app.route('/vms/add', methods=['POST'])
 def add_vm():
+    """
+    Add a new Vending Machine with tea, coffee, latte and juice
+
+    :rtype: json
+    """
     vm = VendingMachine(coins_1 = 100, coins_2 = 100, coins_5 = 100, coins_10 = 100, buff = 0)
     tea = Good(name = u'Чай', price = 13, amount = 10, vm = vm)
     coffee = Good(name = u'Кофе', price = 18, amount = 20, vm = vm)
@@ -74,9 +92,14 @@ def add_vm():
                           'data': None})
 
 
-
 @app.route('/buyer/<int:buyer_id>', methods=['GET'])
 def get_buyer_info(buyer_id):
+    """
+    Get the info about a specific buyer (id and available coins)
+
+    :param int buyer_id: the ID of buyer
+    :rtype: json
+    """
     buyer = Buyer.query.get(buyer_id)
     coins = [{'nominal': key, 'amount': value} for key, value in buyer.get_coins().iteritems()]
     ret = {'id': buyer.id, 'coins': coins}
@@ -90,6 +113,15 @@ def get_buyer_info(buyer_id):
 
 @app.route('/vms/<int:vm_id>/buyer/<int:buyer_id>/add/<int:coin>', methods=['PUT'])
 def add_coin(vm_id, buyer_id, coin):
+    """
+    Add a coin to Vending Machine (and give it from buyer)
+
+    :param int vm_id: the id of VM
+    :param int buyer_id: the id of buyer
+    :param int coin: the value of coin
+
+    :rtype: json
+    """
     vm = VendingMachine.query.get(vm_id)
     buyer = Buyer.query.get(buyer_id)
     success = buyer.give_coin(coin)
@@ -107,6 +139,14 @@ def add_coin(vm_id, buyer_id, coin):
 
 @app.route('/vms/<int:vm_id>/pay/<int:good_id>', methods=['PUT'])
 def buy(vm_id, good_id):
+    """
+    Buy something from VM
+
+    :param int vm_id: the id of VM
+    :param int good_id: the id of stuff to buy
+
+    :rtype: json
+    """
     success = False
     message = u'Недостаточно средств'
     good = Good.query.filter(db.and_(Good.id == good_id, Good.vm_id == vm_id)).options(flask_sqlalchemy.orm.joinedload('vm').load_only('buff')).first()
@@ -131,6 +171,14 @@ def buy(vm_id, good_id):
 
 @app.route('/vms/<int:vm_id>/buyer/<int:buyer_id>/return', methods=['PUT'])
 def return_founds(vm_id, buyer_id):
+    """
+    Return all money from buffer of VM.
+
+    :param int vm_id: the id of VM
+    :param int buyer_id: the id of buyer
+
+    :rtype: json
+    """
     vm = VendingMachine.query.get(vm_id)
     buyer = Buyer.query.get(buyer_id)
     coins = vm.return_from_buff()
