@@ -20,8 +20,8 @@ BaseManager = (function() {
   BaseManager.prototype.get_vm = function(vm_id) {
     var data;
     data = this.ask('GET', '/vms/' + vm_id);
-    if (data) {
-      this.vm = new VendingMachine(data);
+    if (data.success) {
+      this.vm = new VendingMachine(data.data);
       this.vm.render();
     }
   };
@@ -29,8 +29,8 @@ BaseManager = (function() {
   BaseManager.prototype.get_buyer = function(buyer_id) {
     var data;
     data = this.ask('GET', '/buyer/' + buyer_id);
-    if (data) {
-      this.buyer = new Buyer(data);
+    if (data.success) {
+      this.buyer = new Buyer(data.data);
       this.buyer.render();
     }
   };
@@ -41,10 +41,10 @@ BaseManager = (function() {
 
 VendingMachine = (function() {
   function VendingMachine(data) {
-    this.id = data.vm.id;
-    this.coins = data.vm.coins;
-    this.goods = data.vm.goods;
-    this.buffer = data.vm.buffer;
+    this.id = data.id;
+    this.coins = data.coins;
+    this.goods = data.goods;
+    this.buffer = data.buffer;
   }
 
   VendingMachine.prototype.render = function() {
@@ -62,11 +62,12 @@ VendingMachine = (function() {
     for (i = 0, len = goods.length; i < len; i++) {
       good = goods[i];
       good.addEventListener('click', function() {
-        var success;
-        success = base.ask('PUT', '/vms/' + vm.id + '/pay/' + this.dataset.id);
-        if (success) {
-          return base.get_vm(vm.id);
+        var data;
+        data = base.ask('PUT', '/vms/' + vm.id + '/pay/' + this.dataset.id);
+        if (data.success) {
+          base.get_vm(vm.id);
         }
+        return vm.preview.querySelector('#message').innerHTML = data.message;
       });
     }
     return this.preview.querySelector('.return').addEventListener('click', function() {
@@ -85,8 +86,8 @@ VendingMachine = (function() {
 
 Buyer = (function() {
   function Buyer(data) {
-    this.id = data.buyer.id;
-    this.coins = data.buyer.coins;
+    this.id = data.id;
+    this.coins = data.coins;
   }
 
   Buyer.prototype.render = function() {

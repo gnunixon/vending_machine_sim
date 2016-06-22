@@ -14,15 +14,15 @@ class BaseManager
 
     get_vm: (vm_id) ->
         data = @ask 'GET', '/vms/' + vm_id
-        if data
-            @vm = new VendingMachine data
+        if data.success
+            @vm = new VendingMachine data.data
             @vm.render()
         return
 
     get_buyer: (buyer_id) ->
         data = @ask 'GET', '/buyer/' + buyer_id
-        if data
-            @buyer = new Buyer data
+        if data.success
+            @buyer = new Buyer data.data
             @buyer.render()
         return
 
@@ -30,10 +30,10 @@ class BaseManager
 class VendingMachine
 
     constructor: (data) ->
-        @id = data.vm.id
-        @coins = data.vm.coins
-        @goods = data.vm.goods
-        @buffer = data.vm.buffer
+        @id = data.id
+        @coins = data.coins
+        @goods = data.goods
+        @buffer = data.buffer
 
     render: ->
         template = '
@@ -67,9 +67,10 @@ class VendingMachine
         goods = @preview.querySelectorAll('.good')
         for good in goods
             good.addEventListener('click', ->
-                success = base.ask 'PUT', '/vms/' + vm.id + '/pay/' + this.dataset.id
-                if success
+                data = base.ask 'PUT', '/vms/' + vm.id + '/pay/' + this.dataset.id
+                if data.success
                     base.get_vm vm.id
+                vm.preview.querySelector('#message').innerHTML = data.message
             )
         @preview.querySelector('.return').addEventListener('click', ->
             success = base.ask 'PUT', '/vms/' + vm.id + '/buyer/' + base.buyer.id + '/return'
@@ -82,8 +83,8 @@ class VendingMachine
 class Buyer
 
     constructor: (data) ->
-        @id = data.buyer.id
-        @coins = data.buyer.coins
+        @id = data.id
+        @coins = data.coins
     
     render: ->
         template = '

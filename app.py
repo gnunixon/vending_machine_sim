@@ -33,7 +33,12 @@ def swig():
 def get_vms():
     vms = VendingMachine.query.all()
     ret = [{'id': vm.id} for vm in vms]
-    return flask.jsonify({'vms': ret})
+    success = True
+    message = ''
+    return flask.jsonify({'success': success,
+                          'message': message,
+                          'action': 'get_vms',
+                          'data': ret})
 
 
 @app.route('/vms/<int:vm_id>', methods=['GET'])
@@ -48,7 +53,12 @@ def get_vm(vm_id):
                       'id': good.id})
     ret = {'id': vm.id, 'coins': coins, 'buffer': vm.buff,
            'goods': goods}
-    return flask.jsonify({'vm': ret})
+    success = True
+    message = ''
+    return flask.jsonify({'success': success,
+                          'message': message,
+                          'action': 'get_vms',
+                          'data': ret})
 
 
 @app.route('/buyer/<int:buyer_id>', methods=['GET'])
@@ -56,7 +66,12 @@ def get_buyer_info(buyer_id):
     buyer = Buyer.query.get(buyer_id)
     coins = [{'nominal': key, 'amount': value} for key, value in buyer.get_coins().iteritems()]
     ret = {'id': buyer.id, 'coins': coins}
-    return flask.jsonify({'buyer': ret})
+    success = True
+    message = ''
+    return flask.jsonify({'success': success,
+                          'message': message,
+                          'action': 'get_buyer',
+                          'data': ret})
 
 
 @app.route('/vms/<int:vm_id>/buyer/<int:buyer_id>/add/<int:coin>', methods=['PUT'])
@@ -64,15 +79,22 @@ def add_coin(vm_id, buyer_id, coin):
     vm = VendingMachine.query.get(vm_id)
     buyer = Buyer.query.get(buyer_id)
     success = buyer.give_coin(coin)
+    message = ''
     if success:
         success = vm.add_to_buff(coin)
+    else:
+        message = u'У вас нет такой монеты'
     db.session.commit()
-    return flask.jsonify({'success': success})
+    return flask.jsonify({'success': success,
+                          'message': message,
+                          'action': 'add_coin',
+                          'data': None})
 
 
 @app.route('/vms/<int:vm_id>/pay/<int:good_id>', methods=['PUT'])
 def buy(vm_id, good_id):
     success = False
+    message = u'Недостаточно средств'
     good = Good.query.filter(db.and_(Good.id == good_id, Good.vm_id == vm_id)).first()
     if good:
         vm = VendingMachine.query.get(vm_id)
@@ -81,7 +103,11 @@ def buy(vm_id, good_id):
             vm.buff -= good.price
             db.session.commit()
             success = True
-    return flask.jsonify({'success': success})
+            message = u'Спасибо!'
+    return flask.jsonify({'success': success,
+                          'message': message.encode('utf-8'),
+                          'action': 'buy',
+                          'data': None})
 
 
 @app.route('/vms/<int:vm_id>/buyer/<int:buyer_id>/return', methods=['PUT'])
@@ -91,7 +117,11 @@ def return_founds(vm_id, buyer_id):
     coins = vm.return_from_buff()
     success = buyer.add_coins(coins)
     db.session.commit()
-    return flask.jsonify({'success': success})
+    message = ''
+    return flask.jsonify({'success': success,
+                          'message': message,
+                          'action': 'return_founds',
+                          'data': None})
 
 
 # Create the database tables.
