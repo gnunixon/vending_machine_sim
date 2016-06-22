@@ -3,8 +3,15 @@ var BaseManager, Buyer, VendingMachine, base;
 
 BaseManager = (function() {
   function BaseManager() {
-    this.get_vm(6);
-    this.get_buyer(1);
+    this.token = this.get_cookie('token');
+    console.log(this.token);
+    if (this.token === '') {
+      console.log('is empty');
+      this.create_buyer();
+    } else {
+      this.get_vm();
+      this.get_buyer();
+    }
   }
 
   BaseManager.prototype.ask = function(method, url) {
@@ -17,6 +24,7 @@ BaseManager = (function() {
         if (xhr.readyState === 4) {
           if (xhr.status === 200) {
             data = JSON.parse(xhr.responseText);
+            console.log;
             if (data.action === 'get_vm') {
               _this.vm = new VendingMachine(data.data);
               return _this.vm.render();
@@ -24,14 +32,21 @@ BaseManager = (function() {
               _this.buyer = new Buyer(data.data);
               return _this.buyer.render();
             } else if (data.action === 'add_coin') {
-              _this.get_vm(_this.vm.id);
-              return _this.get_buyer(_this.buyer.id);
+              _this.get_vm();
+              return _this.get_buyer();
             } else if (data.action === 'buy') {
-              _this.get_vm(_this.vm.id);
+              _this.get_vm();
               return document.querySelector('#messages').innerHTML = data.message;
             } else if (data.action === 'return_founds') {
-              _this.get_vm(_this.vm.id);
-              return _this.get_buyer(_this.buyer.id);
+              _this.get_vm();
+              return _this.get_buyer();
+            } else if (data.action === 'create_buyer') {
+              console.log(data);
+              _this.token = data.data;
+              console.log(_this.token);
+              _this.set_cookie('token', _this.token, 1);
+              _this.get_vm();
+              return _this.get_buyer();
             }
           }
         }
@@ -43,14 +58,47 @@ BaseManager = (function() {
     return xhr.send(null);
   };
 
-  BaseManager.prototype.get_vm = function(vm_id) {
-    var data;
-    data = this.ask('GET', '/vms/' + vm_id);
+  BaseManager.prototype.set_cookie = function(name, value, days) {
+    var date, expires;
+    if (days) {
+      date = new Date;
+      date.setTime(date.getTime + (days * 24 * 3600 * 1000));
+      expires = '; expires=' + date.toGMTString();
+    } else {
+      expires = '';
+    }
+    return document.cookie = name + "=" + value + expires + "; path=/";
   };
 
-  BaseManager.prototype.get_buyer = function(buyer_id) {
+  BaseManager.prototype.get_cookie = function(c_name) {
+    var c_end, c_start;
+    if (document.cookie.length > 0) {
+      c_start = document.cookie.indexOf(c_name + "=");
+      if (c_start !== -1) {
+        c_start = c_start + c_name.length + 1;
+        c_end = document.cookie.indexOf(";", c_start);
+        if (c_end === -1) {
+          c_end = document.cookie.length;
+        }
+        return unescape(document.cookie.substring(c_start, c_end));
+      }
+    }
+    return "";
+  };
+
+  BaseManager.prototype.get_vm = function() {
     var data;
-    data = this.ask('GET', '/buyer/' + buyer_id);
+    data = this.ask('GET', '/vms/' + this.token);
+  };
+
+  BaseManager.prototype.get_buyer = function() {
+    var data;
+    data = this.ask('GET', '/buyer/' + this.token);
+  };
+
+  BaseManager.prototype.create_buyer = function() {
+    var data;
+    data = this.ask('GET', '/buyer/add');
   };
 
   return BaseManager;
@@ -86,7 +134,7 @@ VendingMachine = (function() {
     }
     return this.preview.querySelector('.return').addEventListener('click', function() {
       var success;
-      return success = base.ask('PUT', '/vms/' + vm.id + '/buyer/' + base.buyer.id + '/return');
+      return success = base.ask('PUT', '/vms/' + vm.id + '/buyer/' + base.token + '/return');
     });
   };
 
@@ -116,7 +164,7 @@ Buyer = (function() {
       coin = coins[i];
       results.push(coin.addEventListener('click', function() {
         var data;
-        return data = base.ask('PUT', '/vms/' + base.vm.id + '/buyer/' + base.buyer.id + '/add/' + this.dataset.value);
+        return data = base.ask('PUT', '/vms/' + base.vm.id + '/buyer/' + base.token + '/add/' + this.dataset.value);
       }));
     }
     return results;

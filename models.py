@@ -43,7 +43,7 @@ class Buyer(db.Model):
     #: how many coins of 10 rubles the user have
     coins_10 = db.Column(db.Integer, default=15)
     #: the unique token for identify the buyer
-    token = db.String(unique=True)
+    token = db.Column(db.String, unique=True)
 
     def get_coins(self):
         """
@@ -105,6 +105,7 @@ class VendingMachine(db.Model):
     goods = db.relationship(Good, backref="vm")
     #: the current user that use this VM
     buyer_id = db.Column(db.Integer, db.ForeignKey('buyer.id'))
+    buyer = db.relationship(Buyer, backref='vending_machine')
 
     def get_coins(self):
         """

@@ -1,8 +1,16 @@
 class BaseManager
 
     constructor: ->
-        @get_vm 6
-        @get_buyer 1
+        @token = @get_cookie('token')
+        console.log @token
+        if @token == ''
+            console.log 'is empty'
+            @create_buyer()
+        else
+            @get_vm()
+            @get_buyer()
+        # @get_vm 6
+        # @get_buyer 1
 
     ask: (method, url) ->
         xhr = new XMLHttpRequest
@@ -11,6 +19,7 @@ class BaseManager
             if xhr.readyState == 4
                 if xhr.status == 200
                     data = JSON.parse(xhr.responseText)
+                    console.log
                     if data.action == 'get_vm'
                         @vm = new VendingMachine data.data
                         @vm.render()
@@ -18,24 +27,55 @@ class BaseManager
                         @buyer = new Buyer data.data
                         @buyer.render()
                     else if data.action == 'add_coin'
-                        @get_vm @vm.id
-                        @get_buyer @buyer.id
+                        @get_vm()
+                        @get_buyer()
                     else if data.action == 'buy'
-                        @get_vm @vm.id
+                        @get_vm()
                         document.querySelector('#messages').innerHTML = data.message
                     else if data.action == 'return_founds'
-                        @get_vm @vm.id
-                        @get_buyer @buyer.id
+                        @get_vm()
+                        @get_buyer()
+                    else if data.action == 'create_buyer'
+                        console.log data
+                        @token = data.data
+                        console.log @token
+                        @set_cookie 'token', @token, 1
+                        @get_vm()
+                        @get_buyer()
         xhr.onerror = ->
             console.log 'Network problem'
         xhr.send(null)
 
-    get_vm: (vm_id) ->
-        data = @ask 'GET', '/vms/' + vm_id
+    set_cookie: (name, value, days) ->
+        if days
+            date = new Date
+            date.setTime date.getTime + (days * 24 * 3600 * 1000)
+            expires = '; expires=' + date.toGMTString()
+        else
+            expires = ''
+        document.cookie = name + "=" + value + expires + "; path=/"
+
+    get_cookie: (c_name) ->
+        if (document.cookie.length > 0)
+            c_start = document.cookie.indexOf c_name + "="
+            if (c_start != -1)
+                c_start = c_start + c_name.length + 1
+                c_end = document.cookie.indexOf ";", c_start
+                if (c_end == -1)
+                    c_end = document.cookie.length
+                return unescape document.cookie.substring(c_start, c_end)
+        return ""
+
+    get_vm: ->
+        data = @ask 'GET', '/vms/' + @token
         return
 
-    get_buyer: (buyer_id) ->
-        data = @ask 'GET', '/buyer/' + buyer_id
+    get_buyer: ->
+        data = @ask 'GET', '/buyer/' + @token
+        return
+
+    create_buyer: ->
+        data = @ask 'GET', '/buyer/add'
         return
 
 
@@ -81,7 +121,7 @@ class VendingMachine
                 data = base.ask 'PUT', '/vms/' + vm.id + '/pay/' + this.dataset.id
             )
         @preview.querySelector('.return').addEventListener('click', ->
-            success = base.ask 'PUT', '/vms/' + vm.id + '/buyer/' + base.buyer.id + '/return'
+            success = base.ask 'PUT', '/vms/' + vm.id + '/buyer/' + base.token + '/return'
         )
 
 
@@ -108,7 +148,7 @@ class Buyer
         coins = @preview.querySelectorAll('.coin')
         for coin in coins
             coin.addEventListener('click', ->
-                data = base.ask 'PUT', '/vms/' + base.vm.id + '/buyer/' + base.buyer.id + '/add/' + this.dataset.value
+                data = base.ask 'PUT', '/vms/' + base.vm.id + '/buyer/' + base.token + '/add/' + this.dataset.value
             )
 
 
