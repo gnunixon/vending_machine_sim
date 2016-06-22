@@ -1,3 +1,4 @@
+#!/usr/bin/python2.7
 #-*- encoding: utf-8 -*-
 
 import flask
@@ -80,6 +81,16 @@ def get_vm(token):
                           'message': message,
                           'action': 'get_vm',
                           'data': ret})
+
+
+@app.route('/vms/<int:vm_id>/logout/<string:token>', methods=['PUT'])
+def logout(vm_id, token):
+    print 'LOGOUT'
+    vm = VendingMachine.query.\
+        filter(VendingMachine.buyer.has(token=token)).first()
+    vm.buyer_id = None
+    db.session.commit()
+    return
 
 
 @app.route('/vms/add', methods=['POST'])

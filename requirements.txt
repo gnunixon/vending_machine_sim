@@ -1,3 +1,5 @@
 flask
 flask-restless
 flask-sqlalchemy
+flask-admin
+tornado

@@ -4,14 +4,15 @@ var BaseManager, Buyer, VendingMachine, base;
 BaseManager = (function() {
   function BaseManager() {
     this.token = this.get_cookie('token');
-    console.log(this.token);
     if (this.token === '') {
-      console.log('is empty');
       this.create_buyer();
     } else {
       this.get_vm();
       this.get_buyer();
     }
+    window.onbeforeunload = function() {
+      return this.ask('PUT', '/vms/' + this.vm.id + '/logout/' + this.token);
+    };
   }
 
   BaseManager.prototype.ask = function(method, url) {
@@ -24,7 +25,6 @@ BaseManager = (function() {
         if (xhr.readyState === 4) {
           if (xhr.status === 200) {
             data = JSON.parse(xhr.responseText);
-            console.log;
             if (data.action === 'get_vm') {
               _this.vm = new VendingMachine(data.data);
               return _this.vm.render();
@@ -41,9 +41,7 @@ BaseManager = (function() {
               _this.get_vm();
               return _this.get_buyer();
             } else if (data.action === 'create_buyer') {
-              console.log(data);
               _this.token = data.data;
-              console.log(_this.token);
               _this.set_cookie('token', _this.token, 1);
               _this.get_vm();
               return _this.get_buyer();
@@ -115,7 +113,7 @@ VendingMachine = (function() {
 
   VendingMachine.prototype.render = function() {
     var content, good, goods, i, len, template, vm;
-    template = '<h1>Vending Machine {{ vm.id }}</h1> <div class="coins col-md-12"> {% for coin in vm.coins %} <button class="btn-warning coin" data-value="{{ coin.nominal }}" data-amount="{{ coin.amount }}"> <span class="glyphicon glyphicon-rub"></span> {{ coin.nominal }} X {{ coin.amount }} </button> {% endfor %} </div> <div class="goods col-md-12 thumbnail"> {% for good in vm.goods %} <button class="good col-md-2" data-value="{{ good.name }}" data-price="{{ good.price }}" data-amount="{{ good.amount }}" data-id="{{ good.id }}"> <h4>{{ good.name }}</h4> <h3>{{ good.amount }}</h3> <h4><span class="glyphicon glyphicon-rub"></span> {{ good.price }}</h4> </button> {% endfor %} </div> <div class="buffer thumbnail col-md-6" data-amount="{{ vm.buffer }}"> Внесенная сумма: {{ vm.buffer }} </div> <button class="return btn-danger"><span class="glyphicon glyphicon-repeat"></span>Сдача</button>';
+    template = '<h1>Торговый автомат №{{ vm.id }}</h1> <div class="coins col-md-12"> {% for coin in vm.coins %} <button class="btn btn-warning coin" data-value="{{ coin.nominal }}" data-amount="{{ coin.amount }}"> <span class="glyphicon glyphicon-rub"></span> {{ coin.nominal }} X {{ coin.amount }} </button> {% endfor %} </div> <div class="goods col-md-12 thumbnail"> {% for good in vm.goods %} <button class="btn btn-default good col-md-3" data-value="{{ good.name }}" data-price="{{ good.price }}" data-amount="{{ good.amount }}" data-id="{{ good.id }}"> <h5>{{ good.name }}</h5> <h3>{{ good.amount }}</h3> <h5><span class="glyphicon glyphicon-rub"></span> {{ good.price }}</h5> </button> {% endfor %} </div> <div class="buffer thumbnail col-md-6" data-amount="{{ vm.buffer }}"> Внесенная сумма: {{ vm.buffer }} </div> <button class="btn return btn-danger"><span class="glyphicon glyphicon-repeat"></span>Сдача</button>';
     this.preview = document.getElementById('vm');
     content = swig.render(template, {
       locals: {
@@ -150,7 +148,7 @@ Buyer = (function() {
 
   Buyer.prototype.render = function() {
     var coin, coins, content, i, len, results, template;
-    template = '<h1>Your pocket</h1> <div class="coins"> {% for coin in buyer.coins %} <button class="btn-warning coin" data-value="{{ coin.nominal }}" data-amount="{{ coin.amount }}"> <span class="glyphicon glyphicon-rub"></span> {{ coin.nominal }} X {{ coin.amount }} </button> {% endfor %} </div>';
+    template = '<h1>Ваш кошелёк</h1> <div class="coins"> {% for coin in buyer.coins %} <button class="btn btn-warning coin" data-value="{{ coin.nominal }}" data-amount="{{ coin.amount }}"> <span class="glyphicon glyphicon-rub"></span> {{ coin.nominal }} X {{ coin.amount }} </button> {% endfor %} </div>';
     this.preview = document.getElementById('buyer');
     content = swig.render(template, {
       locals: {

@@ -4,7 +4,8 @@ from change import change_money
 
 app = flask.Flask(__name__, static_url_path='/home/nixon/vms/static')
 app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost/vms'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
 app.config['SQLALCHEMY_ECHO'] = True
 db = flask_sqlalchemy.SQLAlchemy(app)
 
@@ -104,7 +105,7 @@ class VendingMachine(db.Model):
     #: the list of all stuff we can buy in VM
     goods = db.relationship(Good, backref="vm")
     #: the current user that use this VM
-    buyer_id = db.Column(db.Integer, db.ForeignKey('buyer.id'))
+    buyer_id = db.Column(db.Integer, db.ForeignKey('buyer.id'), nullable=True)
     buyer = db.relationship(Buyer, backref='vending_machine')
 
     def get_coins(self):
