@@ -10,29 +10,47 @@ BaseManager = (function() {
   BaseManager.prototype.ask = function(method, url) {
     var xhr;
     xhr = new XMLHttpRequest;
-    xhr.open(method, url, false);
-    xhr.send();
-    if (xhr.status === 200) {
-      return JSON.parse(xhr.responseText);
-    }
+    xhr.open(method, url, true);
+    xhr.onload = (function(_this) {
+      return function() {
+        var data;
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            data = JSON.parse(xhr.responseText);
+            if (data.action === 'get_vm') {
+              _this.vm = new VendingMachine(data.data);
+              return _this.vm.render();
+            } else if (data.action === 'get_buyer') {
+              _this.buyer = new Buyer(data.data);
+              return _this.buyer.render();
+            } else if (data.action === 'add_coin') {
+              _this.get_vm(_this.vm.id);
+              return _this.get_buyer(_this.buyer.id);
+            } else if (data.action === 'buy') {
+              _this.get_vm(_this.vm.id);
+              return document.querySelector('#messages').innerHTML = data.message;
+            } else if (data.action === 'return_founds') {
+              _this.get_vm(_this.vm.id);
+              return _this.get_buyer(_this.buyer.id);
+            }
+          }
+        }
+      };
+    })(this);
+    xhr.onerror = function() {
+      return console.log('Network problem');
+    };
+    return xhr.send(null);
   };
 
   BaseManager.prototype.get_vm = function(vm_id) {
     var data;
     data = this.ask('GET', '/vms/' + vm_id);
-    if (data.success) {
-      this.vm = new VendingMachine(data.data);
-      this.vm.render();
-    }
   };
 
   BaseManager.prototype.get_buyer = function(buyer_id) {
     var data;
     data = this.ask('GET', '/buyer/' + buyer_id);
-    if (data.success) {
-      this.buyer = new Buyer(data.data);
-      this.buyer.render();
-    }
   };
 
   return BaseManager;
@@ -49,7 +67,7 @@ VendingMachine = (function() {
 
   VendingMachine.prototype.render = function() {
     var content, good, goods, i, len, template, vm;
-    template = '<h1>Vending Machine {{ vm.id }}</h1> <div class="coins col-md-12"> {% for coin in vm.coins %} <button class="btn-warning coin" data-value="{{ coin.nominal }}" data-amount="{{ coin.amount }}"> <span class="glyphicon glyphicon-rub"></span> {{ coin.nominal }} X {{ coin.amount }} </button> {% endfor %} </div> <div class="goods col-md-12 thumbnail"> {% for good in vm.goods %} <button class="good col-md-2" data-value="{{ good.name }}" data-price="{{ good.price }}" data-amount="{{ good.amount }}" data-id="{{ good.id }}"> <h4>{{ good.name }}</h4> <h3>{{ good.amount }}</h3> <h4><span class="glyphicon glyphicon-rub"></span> {{ good.price }}</h4> </button> {% endfor %} </div> <div class="buffer thumbnail col-md-6" data-amount="{{ vm.buffer }}"> {{ vm.buffer }} </div> <button class="return btn-danger"><span class="glyphicon glyphicon-repeat"></span></button> <div id="message" class="col-md-12"></div>';
+    template = '<h1>Vending Machine {{ vm.id }}</h1> <div class="coins col-md-12"> {% for coin in vm.coins %} <button class="btn-warning coin" data-value="{{ coin.nominal }}" data-amount="{{ coin.amount }}"> <span class="glyphicon glyphicon-rub"></span> {{ coin.nominal }} X {{ coin.amount }} </button> {% endfor %} </div> <div class="goods col-md-12 thumbnail"> {% for good in vm.goods %} <button class="good col-md-2" data-value="{{ good.name }}" data-price="{{ good.price }}" data-amount="{{ good.amount }}" data-id="{{ good.id }}"> <h4>{{ good.name }}</h4> <h3>{{ good.amount }}</h3> <h4><span class="glyphicon glyphicon-rub"></span> {{ good.price }}</h4> </button> {% endfor %} </div> <div class="buffer thumbnail col-md-6" data-amount="{{ vm.buffer }}"> {{ vm.buffer }} </div> <button class="return btn-danger"><span class="glyphicon glyphicon-repeat"></span></button>';
     this.preview = document.getElementById('vm');
     content = swig.render(template, {
       locals: {
@@ -63,20 +81,12 @@ VendingMachine = (function() {
       good = goods[i];
       good.addEventListener('click', function() {
         var data;
-        data = base.ask('PUT', '/vms/' + vm.id + '/pay/' + this.dataset.id);
-        if (data.success) {
-          base.get_vm(vm.id);
-        }
-        return vm.preview.querySelector('#message').innerHTML = data.message;
+        return data = base.ask('PUT', '/vms/' + vm.id + '/pay/' + this.dataset.id);
       });
     }
     return this.preview.querySelector('.return').addEventListener('click', function() {
       var success;
-      success = base.ask('PUT', '/vms/' + vm.id + '/buyer/' + base.buyer.id + '/return');
-      if (success) {
-        base.get_vm(vm.id);
-        return base.get_buyer(base.buyer.id);
-      }
+      return success = base.ask('PUT', '/vms/' + vm.id + '/buyer/' + base.buyer.id + '/return');
     });
   };
 
@@ -106,13 +116,7 @@ Buyer = (function() {
       coin = coins[i];
       results.push(coin.addEventListener('click', function() {
         var data;
-        data = base.ask('PUT', '/vms/' + base.vm.id + '/buyer/' + base.buyer.id + '/add/' + this.dataset.value);
-        if (data) {
-          base.get_vm(base.vm.id);
-          base.get_buyer(base.buyer.id);
-        }
-        console.log(this);
-        return console.log(vm);
+        return data = base.ask('PUT', '/vms/' + base.vm.id + '/buyer/' + base.buyer.id + '/add/' + this.dataset.value);
       }));
     }
     return results;

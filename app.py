@@ -59,7 +59,7 @@ def get_vm(vm_id):
     message = ''
     return flask.jsonify({'success': success,
                           'message': message,
-                          'action': 'get_vms',
+                          'action': 'get_vm',
                           'data': ret})
 
 

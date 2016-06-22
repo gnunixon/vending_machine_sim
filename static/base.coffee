@@ -6,24 +6,36 @@ class BaseManager
 
     ask: (method, url) ->
         xhr = new XMLHttpRequest
-        xhr.open method, url, false
-        xhr.send()
-        if xhr.status == 200
-            return JSON.parse(xhr.responseText)
-        return
+        xhr.open method, url, true
+        xhr.onload = =>
+            if xhr.readyState == 4
+                if xhr.status == 200
+                    data = JSON.parse(xhr.responseText)
+                    if data.action == 'get_vm'
+                        @vm = new VendingMachine data.data
+                        @vm.render()
+                    else if data.action == 'get_buyer'
+                        @buyer = new Buyer data.data
+                        @buyer.render()
+                    else if data.action == 'add_coin'
+                        @get_vm @vm.id
+                        @get_buyer @buyer.id
+                    else if data.action == 'buy'
+                        @get_vm @vm.id
+                        document.querySelector('#messages').innerHTML = data.message
+                    else if data.action == 'return_founds'
+                        @get_vm @vm.id
+                        @get_buyer @buyer.id
+        xhr.onerror = ->
+            console.log 'Network problem'
+        xhr.send(null)
 
     get_vm: (vm_id) ->
         data = @ask 'GET', '/vms/' + vm_id
-        if data.success
-            @vm = new VendingMachine data.data
-            @vm.render()
         return
 
     get_buyer: (buyer_id) ->
         data = @ask 'GET', '/buyer/' + buyer_id
-        if data.success
-            @buyer = new Buyer data.data
-            @buyer.render()
         return
 
 
@@ -58,7 +70,6 @@ class VendingMachine
                 {{ vm.buffer }}
             </div>
             <button class="return btn-danger"><span class="glyphicon glyphicon-repeat"></span></button>
-            <div id="message" class="col-md-12"></div>
             '
         @preview = document.getElementById('vm')
         content = swig.render template, locals: {vm: @}
@@ -68,15 +79,9 @@ class VendingMachine
         for good in goods
             good.addEventListener('click', ->
                 data = base.ask 'PUT', '/vms/' + vm.id + '/pay/' + this.dataset.id
-                if data.success
-                    base.get_vm vm.id
-                vm.preview.querySelector('#message').innerHTML = data.message
             )
         @preview.querySelector('.return').addEventListener('click', ->
             success = base.ask 'PUT', '/vms/' + vm.id + '/buyer/' + base.buyer.id + '/return'
-            if success
-                base.get_vm vm.id
-                base.get_buyer base.buyer.id
         )
 
 
@@ -104,11 +109,6 @@ class Buyer
         for coin in coins
             coin.addEventListener('click', ->
                 data = base.ask 'PUT', '/vms/' + base.vm.id + '/buyer/' + base.buyer.id + '/add/' + this.dataset.value
-                if data
-                    base.get_vm base.vm.id
-                    base.get_buyer base.buyer.id
-                console.log this
-                console.log vm
             )
 
 
