@@ -83,16 +83,6 @@ def get_vm(token):
                           'data': ret})
 
 
-@app.route('/vms/<int:vm_id>/logout/<string:token>', methods=['PUT'])
-def logout(vm_id, token):
-    print 'LOGOUT'
-    vm = VendingMachine.query.\
-        filter(VendingMachine.buyer.has(token=token)).first()
-    vm.buyer_id = None
-    db.session.commit()
-    return
-
-
 @app.route('/vms/add', methods=['POST'])
 def add_vm():
     """

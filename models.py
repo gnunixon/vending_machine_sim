@@ -2,11 +2,10 @@ import flask
 import flask_sqlalchemy
 from change import change_money
 
-app = flask.Flask(__name__, static_url_path='/home/nixon/vms/static')
+app = flask.Flask(__name__, static_url_path='/static')
 app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost/vms'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://user:password@localhost/vms'
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
-app.config['SQLALCHEMY_ECHO'] = True
 db = flask_sqlalchemy.SQLAlchemy(app)
 
 

@@ -3,3 +3,4 @@ flask-restless
 flask-sqlalchemy
 flask-admin
 tornado
+psycopg2

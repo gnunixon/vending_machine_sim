@@ -7,10 +7,6 @@ class BaseManager
         else
             @get_vm()
             @get_buyer()
-        window.onbeforeunload = ->
-            @ask 'PUT', '/vms/' + @vm.id + '/logout/' + @token
-        # @get_vm 6
-        # @get_buyer 1
 
     ask: (method, url) ->
         xhr = new XMLHttpRequest
@@ -40,7 +36,7 @@ class BaseManager
                         @get_vm()
                         @get_buyer()
         xhr.onerror = ->
-            console.log 'Network problem'
+            @set_cookie 'token', '', 0
         xhr.send(null)
 
     set_cookie: (name, value, days) ->

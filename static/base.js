@@ -10,9 +10,6 @@ BaseManager = (function() {
       this.get_vm();
       this.get_buyer();
     }
-    window.onbeforeunload = function() {
-      return this.ask('PUT', '/vms/' + this.vm.id + '/logout/' + this.token);
-    };
   }
 
   BaseManager.prototype.ask = function(method, url) {
@@ -51,7 +48,7 @@ BaseManager = (function() {
       };
     })(this);
     xhr.onerror = function() {
-      return console.log('Network problem');
+      return this.set_cookie('token', '', 0);
     };
     return xhr.send(null);
   };
